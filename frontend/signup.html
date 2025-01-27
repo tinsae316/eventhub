@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up for EventHub</title>
+    <link rel="stylesheet" href="signup.css">
+</head>
+<body>
+<div class="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-md">
+        <div>
+            <h2 class="text-center text-3xl font-extrabold text-gray-900">Sign Up for EventHub</h2>
+        </div>
+        <form class="mt-8 space-y-6" onsubmit="handleSubmit(event)">
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="username" class="sr-only">Username</label>
+                    <input id="username" name="username" type="text" autocomplete="username" required class="input-field" placeholder="Username">
+                </div>
+                <div>
+                    <label for="email" class="sr-only">Email address</label>
+                    <input id="email" name="email" type="email" autocomplete="email" required class="input-field" placeholder="Email address">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" name="password" type="password" autocomplete="new-password" required class="input-field" placeholder="Password">
+                </div>
+                <div>
+                    <label for="confirmPassword" class="sr-only">Confirm Password</label>
+                    <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required class="input-field" placeholder="Confirm Password">
+                </div>
+                <div>
+                    <label for="age" class="sr-only">Age</label>
+                    <select id="age" name="age" required class="input-field">
+                        <option value="" disabled selected>Select your age group</option>
+                        <option value="under18">Under 18</option>
+                        <option value="over18">18+</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" class="btn">Sign Up</button>
+            </div>
+        </form>
+        <p class="mt-2 text-center text-sm text-gray-600">
+            Already have an account? <a href="/login" class="text-indigo-600 hover:text-indigo-500">Login</a>
+        </p>
+        <!-- Error message container -->
+        <div id="error-message" class="text-red-500 text-center mt-4"></div>
+    </div>
+</div>
+
+<script>
+    async function handleSubmit(event) {
+        event.preventDefault();
+
+        // Get form data
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const age = document.getElementById('age').value;
+
+        // Check if passwords match
+        if (password !== confirmPassword) {
+            document.getElementById('error-message').textContent = 'Passwords do not match.';
+            return;
+        }
+
+        // Prepare the user object
+        const user = {
+            username: username, // Use the username from the form
+            password: password,
+            email: email,
+            age: age // Include age in the user object
+        };
+
+        try {
+            // Send signup request to the backend
+            const response = await fetch('http://localhost:8080/api/users/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(user)
+            });
+
+            const text = await response.text();
+            if (response.ok) {
+                // Redirect to the login page
+                window.location.href = 'index.html';
+            } else {
+                // Display error message
+                document.getElementById('error-message').textContent = text || 'Signup failed. Please try again.';
+            }
+        } catch (error) {
+            console.error('Error during signup:', error);
+            document.getElementById('error-message').textContent = 'An error occurred. Please try again.';
+        }
+    }
+</script>
+</body>
+</html>

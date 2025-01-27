@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Events</title>
+    <link rel="stylesheet" href="events.css">
+    <style>
+        /* Add your CSS styles here */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+        .card-title {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .card-description {
+            margin: 5px 0 0;
+            color: #666;
+        }
+        .card-content {
+            padding: 15px;
+        }
+        .event-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .card-footer {
+            padding: 15px;
+            text-align: center;
+            background: #f8f9fa;
+            border-top: 1px solid #ddd;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn.registered {
+            background: #28a745;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">Upcoming Events</h1>
+    <div class="events-grid" id="events-grid">
+        <!-- Event cards will be dynamically inserted here -->
+    </div>
+</div>
+
+<script>
+    // Fetch and display events
+    async function fetchEvents() {
+        try {
+            const response = await fetch("http://localhost:8080/api/events/all"); // Fetch all events
+            if (!response.ok) {
+                throw new Error("Failed to fetch events");
+            }
+            const events = await response.json();
+            console.log("Fetched events:", events); // Log the fetched events
+            renderEvents(events);
+        } catch (error) {
+            console.error("Error fetching events:", error);
+        }
+    }
+
+    // Check if the user is registered for an event
+    async function checkRegistration(eventId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const phone = urlParams.get("phone"); // Get the user's phone from the URL
+
+        if (!phone) {
+            return false; // No phone provided, assume user is not registered
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/events/check-registration?phone=${phone}&eventId=${eventId}`);
+            if (!response.ok) {
+                throw new Error("Failed to check registration status");
+            }
+            const isRegistered = await response.json();
+            return isRegistered;
+        } catch (error) {
+            console.error("Error checking registration:", error);
+            return false;
+        }
+    }
+
+    // Render events on the page
+    async function renderEvents(events) {
+        const eventsGrid = document.getElementById("events-grid");
+        eventsGrid.innerHTML = ""; // Clear the grid before rendering
+
+        for (const event of events) {
+            const isRegistered = await checkRegistration(event.id); // Check if the user is registered for this event
+
+            const eventCard = `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">${event.name}</h2>
+                        <p class="card-description">${event.description}</p>
+                    </div>
+                    <div class="card-content">
+                        <img src="${event.photoUrl}" alt="${event.name}" class="event-image">
+                        <p><strong>Age Group:</strong> ${event.ageGroup}</p>
+                        <p><strong>Capacity:</strong> ${event.capacity}</p>
+                        <p><strong>Registered Users:</strong> ${event.registeredUsers}</p>
+                    </div>
+                    <div class="card-footer">
+                        ${isRegistered ? '<button class="btn registered" disabled>Registered</button>' : `<a href="register.html?eventId=${event.id}" class="btn">Register</a>`}
+                    </div>
+                </div>
+            `;
+
+            eventsGrid.innerHTML += eventCard; // Add the event card to the grid
+        }
+    }
+
+    // Fetch events on page load
+    fetchEvents();
+
+    // Poll for new events every 5 seconds
+    setInterval(fetchEvents, 5000);
+</script>
+</body>
+</html>

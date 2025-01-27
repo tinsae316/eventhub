@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="admin.css">
+    <style>
+        /* Add your CSS styles here */
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">Admin Dashboard</h1>
+
+    <!-- Add New Event Section -->
+    <div class="section">
+        <h2 class="section-title">Add New Event</h2>
+        <form id="event-form" class="event-form">
+            <div class="form-group">
+                <label for="name">Event Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="ageGroup">Age Group</label>
+                <select id="ageGroup" name="ageGroup" required>
+                    <option value="Under 18">Under 18</option>
+                    <option value="18+">18+</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="photoUrl">Photo URL</label>
+                <input type="url" id="photoUrl" name="photoUrl" required>
+            </div>
+            <div class="form-group">
+                <label for="capacity">Capacity</label>
+                <input type="number" id="capacity" name="capacity" required>
+            </div>
+            <button type="submit" class="btn">Add Event</button>
+        </form>
+    </div>
+
+    <!-- Manage Events Section -->
+    <div class="section">
+        <h2 class="section-title">Manage Events</h2>
+        <div class="events-grid" id="events-grid">
+            <!-- Event cards will be dynamically inserted here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Handle form submission
+    document.getElementById("event-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        // Get form data
+        const eventData = {
+            name: document.getElementById("name").value,
+            description: document.getElementById("description").value,
+            ageGroup: document.getElementById("ageGroup").value,
+            photoUrl: document.getElementById("photoUrl").value,
+            capacity: parseInt(document.getElementById("capacity").value),
+            registeredUsers: 0 // Initialize registeredUsers to 0
+        };
+
+        // Send the event data to the backend
+        try {
+            const response = await fetch("http://localhost:8080/api/events/admin/add", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(eventData)
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to add event");
+            }
+
+            alert("Event added successfully!");
+            document.getElementById("event-form").reset(); // Clear the form
+            fetchEvents(); // Refresh the event list
+        } catch (error) {
+            console.error("Error adding event:", error);
+            alert("Failed to add event. Please try again.");
+        }
+    });
+
+    // Fetch and display events
+    async function fetchEvents() {
+    try {
+        const response = await fetch("http://localhost:8080/api/events/all"); // Fetch all events
+        if (!response.ok) {
+            throw new Error("Failed to fetch events");
+        }
+        const events = await response.json();
+        console.log("Fetched events:", events); // Log the fetched events
+        renderEvents(events);
+    } catch (error) {
+        console.error("Error fetching events:", error);
+    }
+}
+
+    // Render events
+    function renderEvents(events) {
+        const eventsGrid = document.getElementById("events-grid");
+        eventsGrid.innerHTML = events.map(event => `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">${event.name}</h3>
+                </div>
+                <div class="card-content">
+                    <img src="${event.photoUrl}" alt="${event.name}" class="event-image">
+                    <p class="description">${event.description}</p>
+                    <p><strong>Age Group:</strong> ${event.ageGroup}</p>
+                    <p><strong>Capacity:</strong> ${event.capacity}</p>
+                    <p><strong>Registered Users:</strong> ${event.registeredUsers}</p>
+                </div>
+                <div class="card-footer">
+                    <button class="btn delete-btn" onclick="deleteEvent(${event.id})">Delete Event</button>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    // Delete an event
+    async function deleteEvent(eventId) {
+        try {
+            const response = await fetch(`http://localhost:8080/api/events/admin/delete/${eventId}`, {
+                method: "DELETE"
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to delete event");
+            }
+
+            alert("Event deleted successfully!");
+            fetchEvents(); // Refresh the event list
+        } catch (error) {
+            console.error("Error deleting event:", error);
+            alert("Failed to delete event. Please try again.");
+        }
+    }
+
+    // Fetch events on page load
+    fetchEvents();
+</script>
+</body>
+</html>

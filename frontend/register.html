@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="register.css">
+    <title>Register for Event</title>
+    <style>
+        /* Add your CSS styles here */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        .form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .label {
+            font-size: 1.2rem;
+        }
+        .input {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">Register for Event</h1>
+    <form class="form" onsubmit="handleSubmit(event)">
+        <div class="form-group">
+            <label for="name" class="label">Name</label>
+            <input id="name" class="input" type="text" required>
+        </div>
+        <div class="form-group">
+            <label for="phone" class="label">Phone Number</label>
+            <input id="phone" class="input" type="tel" required>
+        </div>
+        <button type="submit" class="button">Register</button>
+    </form>
+</div>
+<script>
+    async function handleSubmit(event) {
+        event.preventDefault();
+
+        const name = document.getElementById("name").value;
+        const phone = document.getElementById("phone").value;
+        const eventId = new URLSearchParams(window.location.search).get("eventId");
+        const userId = 1; // Replace this with the actual user ID (e.g., from session or login)
+
+        console.log("Extracted eventId:", eventId);
+        console.log("Extracted userId:", userId);
+
+        if (!name || !phone || !eventId || !userId) {
+            alert("Please fill out all fields.");
+            return;
+        }
+
+        try {
+            const response = await fetch("http://localhost:8080/api/events/register-with-phone", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ name, phone, eventId: Number(eventId), userId: Number(userId) }),
+            });
+
+            const responseData = await response.json();
+
+            if (!response.ok) {
+                throw new Error(responseData.message || "Registration failed");
+            }
+
+            // Redirect to events.html with the user's phone as a query parameter
+            window.location.href = `/events.html?phone=${phone}`;
+        } catch (error) {
+            console.error("Error:", error);
+            alert(error.message || "Registration failed. Please try again.");
+        }
+    }
+</script>
+</body>
+</html>
