@@ -28,13 +28,13 @@
             <div class="form-group">
                 <label for="ageGroup">Age Group</label>
                 <select id="ageGroup" name="ageGroup" required>
-                    <option value="under18">Under 18</option> <!-- Use consistent format -->
-                    <option value="18plus">18+</option> <!-- Use consistent format -->
+                    <option value="under18">Under 18</option>
+                    <option value="18plus">18+</option>
                 </select>
             </div>
             <div class="form-group">
                 <label for="photoUrl">Photo URL</label>
-                <input type="url" id="photoUrl" name="photoUrl" required>
+                <input type="file" id="photoUrl" name="photoUrl" accept="image/*" required>
             </div>
             <div class="form-group">
                 <label for="capacity">Capacity</label>
@@ -62,28 +62,24 @@
             window.location.href = "index.html"; // Redirect to login page
         }
     });
+
     // Handle form submission
     document.getElementById("event-form").addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        // Get form data
-        const eventData = {
-            name: document.getElementById("name").value,
-            description: document.getElementById("description").value,
-            ageGroup: document.getElementById("ageGroup").value,
-            photoUrl: document.getElementById("photoUrl").value,
-            capacity: parseInt(document.getElementById("capacity").value),
-            registeredUsers: 0 // Initialize registeredUsers to 0
-        };
+        // Create FormData object and append form data
+        const formData = new FormData();
+        formData.append('name', document.getElementById("name").value);
+        formData.append('description', document.getElementById("description").value);
+        formData.append('ageGroup', document.getElementById("ageGroup").value);
+        formData.append('capacity', parseInt(document.getElementById("capacity").value));
+        formData.append('photoUrl', document.getElementById("photoUrl").files[0]);
 
-        // Send the event data to the backend without Authorization header
+        // Send the event data to the backend using FormData
         try {
             const response = await fetch("http://localhost:8080/api/events/admin/add", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(eventData)
+                body: formData // Send FormData instead of JSON
             });
 
             if (!response.ok) {
@@ -101,18 +97,18 @@
 
     // Fetch and display events
     async function fetchEvents() {
-    try {
-        const response = await fetch("http://localhost:8080/api/events/all"); // Fetch all events
-        if (!response.ok) {
-            throw new Error("Failed to fetch events");
+        try {
+            const response = await fetch("http://localhost:8080/api/events/all"); // Fetch all events
+            if (!response.ok) {
+                throw new Error("Failed to fetch events");
+            }
+            const events = await response.json();
+            console.log("Fetched events:", events); // Log the fetched events
+            renderEvents(events);
+        } catch (error) {
+            console.error("Error fetching events:", error);
         }
-        const events = await response.json();
-        console.log("Fetched events:", events); // Log the fetched events
-        renderEvents(events);
-    } catch (error) {
-        console.error("Error fetching events:", error);
     }
-}
 
     // Render events
     function renderEvents(events) {

@@ -14,7 +14,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:63342") // Allow requests from the frontend
+@CrossOrigin(origins = "http://localhost:63342")
 public class UserController {
 
     @Autowired
@@ -26,11 +26,10 @@ public class UserController {
     @Autowired
     private EventService eventService;
 
-    // Login Endpoint with Age-Based Event Filtering
+    // Login Endpoint
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            // Find the user by username
             Optional<User> userOptional = userRepository.findByUsername(loginRequest.getUsername());
 
             if (userOptional.isEmpty()) {
@@ -39,18 +38,13 @@ public class UserController {
 
             User user = userOptional.get();
 
-            // Validate password
             if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
                 return ResponseEntity.badRequest().body("Invalid username or password");
             }
 
-            // Determine the user's age group
             String ageGroup = user.getAge() < 18 ? "under18" : "18plus";
-
-            // Fetch events for the user's age group
             List<Event> events = eventService.getEventsByAgeGroup(ageGroup);
 
-            // Prepare the login response with the userId
             LoginResponse response = new LoginResponse(user.getId(), user.isAdmin(), ageGroup, "Login successful", events);
 
             return ResponseEntity.ok(response);
@@ -64,20 +58,24 @@ public class UserController {
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
         try {
-            // Check if the username already exists
+            if (signupRequest.getUsername() == null || signupRequest.getUsername().isEmpty()) {
+                return ResponseEntity.badRequest().body("Username is required");
+            }
+            if (signupRequest.getEmail() == null || signupRequest.getEmail().isEmpty()) {
+                return ResponseEntity.badRequest().body("Email is required");
+            }
+
             Optional<User> existingUser = userRepository.findByUsername(signupRequest.getUsername());
             if (existingUser.isPresent()) {
                 return ResponseEntity.badRequest().body("Username already exists");
             }
 
-            // Create a new User object
             User newUser = new User();
             newUser.setUsername(signupRequest.getUsername());
             newUser.setEmail(signupRequest.getEmail());
             newUser.setAge(signupRequest.getAge());
-            newUser.setPassword(passwordEncoder.encode(signupRequest.getPassword())); // Encrypt the password
+            newUser.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
 
-            // Save the new user to the database
             userRepository.save(newUser);
 
             return ResponseEntity.ok("User registered successfully");
@@ -87,14 +85,12 @@ public class UserController {
         }
     }
 
-    // Inner class for signup request
     public static class SignupRequest {
         private String username;
         private String password;
         private String email;
         private int age;
 
-        // Getters and Setters
         public String getUsername() {
             return username;
         }
@@ -128,12 +124,10 @@ public class UserController {
         }
     }
 
-    // Inner class for login request
     public static class LoginRequest {
         private String username;
         private String password;
 
-        // Getters and Setters
         public String getUsername() {
             return username;
         }
@@ -151,7 +145,6 @@ public class UserController {
         }
     }
 
-    // Inner class for login response
     public static class LoginResponse {
         private Long userId;
         private boolean isAdmin;
@@ -159,7 +152,6 @@ public class UserController {
         private String message;
         private List<Event> events;
 
-        // Constructor
         public LoginResponse(Long userId, boolean isAdmin, String ageGroup, String message, List<Event> events) {
             this.userId = userId;
             this.isAdmin = isAdmin;
@@ -168,7 +160,6 @@ public class UserController {
             this.events = events;
         }
 
-        // Getters and Setters
         public Long getUserId() {
             return userId;
         }
@@ -210,4 +201,3 @@ public class UserController {
         }
     }
 }
-

@@ -24,7 +24,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/events")
-@CrossOrigin(origins = "http://localhost:63342") // Allow requests from the frontend
+@CrossOrigin(origins = "http://localhost:63342")
 public class EventController {
 
     @Autowired
@@ -41,13 +41,11 @@ public class EventController {
 
     private final String IMAGE_UPLOAD_DIR = "uploads/images/";
 
-    // Get all events
     @GetMapping("/all")
     public List<Event> getAllEvents() {
         return eventService.getAllEvents();
     }
 
-    // Get events by user's age group
     @GetMapping("/age-group/{ageGroup}")
     public ResponseEntity<?> getEventsByAgeGroup(@PathVariable String ageGroup) {
         try {
@@ -61,7 +59,6 @@ public class EventController {
         }
     }
 
-    // Register for an event with phone number
     @PostMapping("/register-with-phone")
     public ResponseEntity<?> registerForEventWithPhone(@RequestBody RegistrationRequest request) {
         try {
@@ -103,7 +100,6 @@ public class EventController {
         }
     }
 
-    // Add a new event (Admin only) - Updated to handle image upload
     @PostMapping("/admin/add")
     public ResponseEntity<String> addEvent(
             @RequestParam String name,
@@ -112,7 +108,6 @@ public class EventController {
             @RequestParam int capacity,
             @RequestParam MultipartFile photoUrl) {
         try {
-            // Validate event details
             if (name == null || name.isEmpty()) {
                 return ResponseEntity.badRequest().body("Event name is required");
             }
@@ -126,44 +121,24 @@ public class EventController {
                 return ResponseEntity.badRequest().body("Capacity must be a positive number");
             }
 
-            // Save the image file
             String fileName = System.currentTimeMillis() + "_" + photoUrl.getOriginalFilename();
             Path filePath = Path.of(IMAGE_UPLOAD_DIR + fileName);
-            Files.createDirectories(filePath.getParent()); // Create directories if not exist
+            Files.createDirectories(filePath.getParent());
             Files.copy(photoUrl.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Create and save the event
             Event event = new Event();
             event.setName(name);
             event.setDescription(description);
             event.setAgeGroup(ageGroup);
             event.setCapacity(capacity);
             event.setRegisteredUsers(0);
-            event.setPhotoUrl(filePath.toString());  // Store the path of the uploaded image
+            event.setPhotoUrl(filePath.toString());
 
             eventService.saveEvent(event);
 
             return ResponseEntity.ok("Event added successfully!");
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload image: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to add event: " + e.getMessage());
-        }
-    }
-
-    // Delete an event (Admin only)
-    @DeleteMapping("/admin/delete/{id}")
-    public ResponseEntity<String> deleteEvent(@PathVariable Long id) {
-        try {
-            if (!eventRepository.existsById(id)) {
-                return ResponseEntity.badRequest().body("Event not found");
-            }
-
-            eventService.deleteEvent(id);
-
-            return ResponseEntity.ok("Event deleted successfully!");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to delete event: " + e.getMessage());
         }
     }
 }
