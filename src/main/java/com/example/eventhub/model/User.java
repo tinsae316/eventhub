@@ -27,8 +27,8 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    @NotNull(message = "Age group cannot be null")
-    private String age; // Can be "under18" or "over18"
+    @NotNull(message = "Age cannot be null")
+    private int age; // Store age as an integer
 
     @Column(name = "is_admin", nullable = false)
     private boolean isAdmin = false; // Default to regular user
@@ -38,7 +38,7 @@ public class User {
     }
 
     // Parameterized constructor (optional, for convenience)
-    public User(String username, String password, String email, String age) {
+    public User(String username, String password, String email, int age) {
         this.username = username;
         this.password = password;
         this.email = email;
@@ -78,11 +78,11 @@ public class User {
         this.email = email;
     }
 
-    public String getAge() {
+    public int getAge() {
         return age;
     }
 
-    public void setAge(String age) {
+    public void setAge(int age) {
         this.age = age;
     }
 

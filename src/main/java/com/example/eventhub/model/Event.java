@@ -10,8 +10,11 @@ public class Event {
     private Long id;
 
     private String name;
+    private String description;
     private int capacity;
     private int registeredUsers;
+    @Column(nullable = false)
+    private String ageGroup; // Ensure this matches the expected values: "under18" or "18plus"
 
     // Getters and Setters
     public Long getId() {
@@ -30,6 +33,14 @@ public class Event {
         this.name = name;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public int getCapacity() {
         return capacity;
     }
@@ -44,5 +55,13 @@ public class Event {
 
     public void setRegisteredUsers(int registeredUsers) {
         this.registeredUsers = registeredUsers;
+    }
+
+    public String getAgeGroup() {
+        return ageGroup;
+    }
+
+    public void setAgeGroup(String ageGroup) {
+        this.ageGroup = ageGroup;
     }
 }

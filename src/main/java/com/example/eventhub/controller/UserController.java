@@ -1,74 +1,86 @@
 package com.example.eventhub.controller;
 
+import com.example.eventhub.model.Event;
 import com.example.eventhub.model.User;
 import com.example.eventhub.repository.UserRepository;
-import com.example.eventhub.service.UserService;
+import com.example.eventhub.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
+@CrossOrigin(origins = "http://localhost:63342") // Allow requests from the frontend
 public class UserController {
-
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
+    private EventService eventService;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @GetMapping("/username/{username}")
-    public User getUserByUsername(@PathVariable String username) {
-        Optional<User> userOptional = userService.findByUsername(username); // Correct usage of Optional
-        return userOptional.orElse(null); // Handle the case where the user is not found
-    }
-
-    @GetMapping("/email/{email}")
-    public User getUserByEmail(@PathVariable String email) {
-        Optional<User> userOptional = userService.findByEmail(email); // Correct usage of Optional
-        return userOptional.orElse(null); // Handle the case where the user is not found
-    }
-
-    // Signup Endpoint
-    @PostMapping("/signup")
-    public ResponseEntity<String> signup(@RequestBody User user) {
-        // Check if the username already exists
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().body("Username already exists");
-        }
-
-        // Check if the email already exists
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Email already exists");
-        }
-
-        // Hash the password before saving
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // Save the user to the database
-        userRepository.save(user);
-        return ResponseEntity.ok("User registered successfully!");
-    }
-
-    // Login Endpoint
+    // Login Endpoint with Age-Based Event Filtering
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        // Find the user by username
-        User user = userRepository.findByUsername(loginRequest.getUsername()).orElse(null);
+        try {
+            // Find the user by username
+            Optional<User> userOptional = userRepository.findByUsername(loginRequest.getUsername());
 
-        // Check if the user exists and the password matches
-        if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return ResponseEntity.badRequest().body("Invalid credentials");
+            if (userOptional.isEmpty()) {
+                return ResponseEntity.badRequest().body("Invalid username or password");
+            }
+
+            User user = userOptional.get();
+
+            // Validate password
+            if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                return ResponseEntity.badRequest().body("Invalid username or password");
+            }
+
+            // Determine the user's age group
+            String ageGroup = user.getAge() < 18 ? "under18" : "18plus";
+
+            // Fetch events for the user's age group
+            List<Event> events = eventService.getEventsByAgeGroup(ageGroup);
+
+            // Prepare the login response
+            LoginResponse response = new LoginResponse(user.isAdmin(), ageGroup, "Login successful", events);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Login failed: " + e.getMessage());
         }
+    }
 
-        // Return the login response
-        return ResponseEntity.ok(new LoginResponse(user.isAdmin(), "Login successful"));
+    // Get User Events by ID (Age Filtering)
+    @GetMapping("/{userId}/events")
+    public ResponseEntity<?> getUserEvents(@PathVariable Long userId) {
+        try {
+            // Fetch the user
+            User user = userRepository.findById(userId).orElse(null);
+
+            if (user == null) {
+                return ResponseEntity.badRequest().body("User not found");
+            }
+
+            // Determine the user's age group
+            String ageGroup = user.getAge() < 18 ? "under18" : "18plus";
+
+            // Fetch events matching the user's age group
+            List<Event> events = eventService.getEventsByAgeGroup(ageGroup);
+
+            return ResponseEntity.ok(events);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error fetching user events: " + e.getMessage());
+        }
     }
 
     // Inner class for login request
@@ -97,11 +109,15 @@ public class UserController {
     // Inner class for login response
     public static class LoginResponse {
         private boolean isAdmin;
+        private String ageGroup;
         private String message;
+        private List<Event> events;
 
-        public LoginResponse(boolean isAdmin, String message) {
+        public LoginResponse(boolean isAdmin, String ageGroup, String message, List<Event> events) {
             this.isAdmin = isAdmin;
+            this.ageGroup = ageGroup;
             this.message = message;
+            this.events = events;
         }
 
         // Getters and Setters
@@ -113,12 +129,28 @@ public class UserController {
             isAdmin = admin;
         }
 
+        public String getAgeGroup() {
+            return ageGroup;
+        }
+
+        public void setAgeGroup(String ageGroup) {
+            this.ageGroup = ageGroup;
+        }
+
         public String getMessage() {
             return message;
         }
 
         public void setMessage(String message) {
             this.message = message;
+        }
+
+        public List<Event> getEvents() {
+            return events;
+        }
+
+        public void setEvents(List<Event> events) {
+            this.events = events;
         }
     }
 }

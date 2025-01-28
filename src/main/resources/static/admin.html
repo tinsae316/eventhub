@@ -28,8 +28,8 @@
             <div class="form-group">
                 <label for="ageGroup">Age Group</label>
                 <select id="ageGroup" name="ageGroup" required>
-                    <option value="Under 18">Under 18</option>
-                    <option value="18+">18+</option>
+                    <option value="under18">Under 18</option> <!-- Use consistent format -->
+                    <option value="18plus">18+</option> <!-- Use consistent format -->
                 </select>
             </div>
             <div class="form-group">
@@ -54,6 +54,14 @@
 </div>
 
 <script>
+    // Add this script at the top of your admin.html
+    document.addEventListener("DOMContentLoaded", () => {
+        const adminPassword = prompt("Enter Admin Password:");
+        if (adminPassword !== "admin123") { // Replace "admin123" with your desired password
+            alert("Invalid password. Access denied.");
+            window.location.href = "index.html"; // Redirect to login page
+        }
+    });
     // Handle form submission
     document.getElementById("event-form").addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -68,7 +76,7 @@
             registeredUsers: 0 // Initialize registeredUsers to 0
         };
 
-        // Send the event data to the backend
+        // Send the event data to the backend without Authorization header
         try {
             const response = await fetch("http://localhost:8080/api/events/admin/add", {
                 method: "POST",

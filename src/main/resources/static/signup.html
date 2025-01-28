@@ -34,8 +34,8 @@
                     <label for="age" class="sr-only">Age</label>
                     <select id="age" name="age" required class="input-field">
                         <option value="" disabled selected>Select your age group</option>
-                        <option value="under18">Under 18</option>
-                        <option value="over18">18+</option>
+                        <option value="17">Under 18</option>
+                        <option value="18">18+</option>
                     </select>
                 </div>
             </div>
@@ -71,10 +71,10 @@
 
         // Prepare the user object
         const user = {
-            username: username, // Use the username from the form
+            username: username,
             password: password,
             email: email,
-            age: age // Include age in the user object
+            age: parseInt(age, 10) // Convert age to an integer
         };
 
         try {
