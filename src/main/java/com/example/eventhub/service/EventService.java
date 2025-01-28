@@ -19,14 +19,15 @@ public class EventService {
     }
 
     public List<Event> getEventsByAgeGroup(String ageGroup) {
-        if (ageGroup.equals("under 18")) {
-            return eventRepository.findByAgeGroup("under 18");
-        } else if (ageGroup.equals("18+")) {
-            return eventRepository.findByAgeGroup("18+");
+        if (ageGroup.equals("under18")) { // Match database value
+            return eventRepository.findByAgeGroup("under18");
+        } else if (ageGroup.equals("18plus")) { // Match database value
+            return eventRepository.findByAgeGroup("18plus");
         } else {
             return new ArrayList<>();
         }
     }
+
 
     public Event saveEvent(Event event) {
         return eventRepository.save(event);

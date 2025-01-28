@@ -13,8 +13,12 @@ public class Event {
     private String description;
     private int capacity;
     private int registeredUsers;
+
     @Column(nullable = false)
     private String ageGroup; // Ensure this matches the expected values: "under18" or "18plus"
+
+    @Column(nullable = true)
+    private String photoUrl; // Added field for storing the image URL
 
     // Getters and Setters
     public Long getId() {
@@ -63,5 +67,13 @@ public class Event {
 
     public void setAgeGroup(String ageGroup) {
         this.ageGroup = ageGroup;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 }

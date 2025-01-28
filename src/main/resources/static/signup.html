@@ -45,7 +45,7 @@
             </div>
         </form>
         <p class="mt-2 text-center text-sm text-gray-600">
-            Already have an account? <a href="/login" class="text-indigo-600 hover:text-indigo-500">Login</a>
+            Already have an account? <a href="index.html" class="text-indigo-600 hover:text-indigo-500">Login</a>
         </p>
         <!-- Error message container -->
         <div id="error-message" class="text-red-500 text-center mt-4"></div>
@@ -87,7 +87,7 @@
 
             const text = await response.text();
             if (response.ok) {
-                // Redirect to the login page
+                // Redirect to the login page (index.html)
                 window.location.href = 'index.html';
             } else {
                 // Display error message

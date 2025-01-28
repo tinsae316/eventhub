@@ -1,76 +1,108 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #f9f9f9;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Events</title>
+    <link rel="stylesheet" href="events.css">
+    <style>
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .title { text-align: center; font-size: 2.5rem; margin-bottom: 20px; }
+        .events-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); }
+        .card-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
+        .card-title { margin: 0; font-size: 1.5rem; }
+        .card-description { margin: 5px 0 0; color: #666; }
+        .card-content { padding: 15px; }
+        .event-image { width: 100%; height: 200px; object-fit: cover; }
+        .card-footer { padding: 15px; text-align: center; background: #f8f9fa; border-top: 1px solid #ddd; }
+        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: #fff; text-decoration: none; border-radius: 5px; }
+        .btn:hover { background: #0056b3; }
+        .btn.registered { background: #28a745; cursor: not-allowed; }
+        .error { color: red; text-align: center; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">Upcoming Events</h1>
+    <div class="events-grid" id="events-grid"></div>
+</div>
 
-.container {
-  width: 80%;
-  margin: 0 auto;
-  padding: 20px;
-}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchEvents();
+    });
 
-.title {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 24px;
-}
+    async function fetchEvents() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const ageGroup = urlParams.get('ageGroup');
+        if (!ageGroup) {
+            alert("Age group not specified. Redirecting to login.");
+            window.location.href = "index.html"; // Redirect if ageGroup is not specified
+            return;
+        }
 
-.events-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-}
+        try {
+            const response = await fetch(`http://localhost:8080/api/events/age-group/${ageGroup}`, {
+                method: 'GET',
+                credentials: 'include' // Ensure credentials (cookies) are sent with the request
+            });
+            if (!response.ok) {
+                throw new Error("Failed to fetch events");
+            }
+            const events = await response.json();
+            renderEvents(events);
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Failed to load events. Please try again.");
+        }
+    }
 
-.card {
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+    async function checkRegistration(eventId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const phone = urlParams.get("phone");
+        if (!phone) return false;
 
-.card-header {
-  background-color: #f1f1f1;
-  padding: 10px;
-}
+        try {
+            const response = await fetch(`http://localhost:8080/api/events/check-registration?phone=${phone}&eventId=${eventId}`, {
+                method: 'GET',
+                credentials: 'include' // Include credentials if required
+            });
+            if (!response.ok) throw new Error("Failed to check registration status");
+            return await response.json();
+        } catch (error) {
+            console.error("Error checking registration:", error);
+            return false;
+        }
+    }
 
-.card-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-}
+    async function renderEvents(events) {
+        const eventsGrid = document.getElementById("events-grid");
+        eventsGrid.innerHTML = "";
 
-.card-description {
-  font-size: 0.875rem;
-  color: #555;
-}
-
-.card-content {
-  padding: 15px;
-}
-
-.event-image {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  margin-bottom: 10px;
-}
-
-.card-footer {
-  padding: 10px;
-  text-align: center;
-}
-
-.btn {
-  display: inline-block;
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-}
-
-.btn:hover {
-  background-color: #0056b3;
-}
+        for (const event of events) {
+            const isRegistered = await checkRegistration(event.id);
+            const eventCard = `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">${event.name}</h2>
+                        <p class="card-description">${event.description}</p>
+                    </div>
+                    <div class="card-content">
+                        <img src="${event.photoUrl}" alt="${event.name}" class="event-image">
+                        <p><strong>Age Group:</strong> ${event.ageGroup}</p>
+                        <p><strong>Capacity:</strong> ${event.capacity}</p>
+                        <p><strong>Registered Users:</strong> ${event.registeredUsers}</p>
+                    </div>
+                    <div class="card-footer">
+                        ${isRegistered ? '<button class="btn registered" disabled>Registered</button>' : `<a href="register.html?eventId=${event.id}" class="btn">Register</a>`}
+                    </div>
+                </div>
+            `;
+            eventsGrid.innerHTML += eventCard;
+        }
+    }
+</script>
+</body>
+</html>

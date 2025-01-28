@@ -37,14 +37,12 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // Enable CORS
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll() // Allow access to /error
-                        .anyRequest().permitAll() // Allow all other requests (optional for now)
+                        .anyRequest().permitAll() // Allow all other requests
                 )
                 .httpBasic(Customizer.withDefaults()); // Use HTTP Basic authentication (optional)
 
         return http.build();
     }
-
-
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

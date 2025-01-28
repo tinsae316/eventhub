@@ -21,10 +21,10 @@ public class UserController {
     private UserRepository userRepository;
 
     @Autowired
-    private EventService eventService;
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private EventService eventService;
 
     // Login Endpoint with Age-Based Event Filtering
     @PostMapping("/login")
@@ -50,8 +50,8 @@ public class UserController {
             // Fetch events for the user's age group
             List<Event> events = eventService.getEventsByAgeGroup(ageGroup);
 
-            // Prepare the login response
-            LoginResponse response = new LoginResponse(user.isAdmin(), ageGroup, "Login successful", events);
+            // Prepare the login response with the userId
+            LoginResponse response = new LoginResponse(user.getId(), user.isAdmin(), ageGroup, "Login successful", events);
 
             return ResponseEntity.ok(response);
 
@@ -60,26 +60,71 @@ public class UserController {
         }
     }
 
-    // Get User Events by ID (Age Filtering)
-    @GetMapping("/{userId}/events")
-    public ResponseEntity<?> getUserEvents(@PathVariable Long userId) {
+    // Signup Endpoint
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
         try {
-            // Fetch the user
-            User user = userRepository.findById(userId).orElse(null);
-
-            if (user == null) {
-                return ResponseEntity.badRequest().body("User not found");
+            // Check if the username already exists
+            Optional<User> existingUser = userRepository.findByUsername(signupRequest.getUsername());
+            if (existingUser.isPresent()) {
+                return ResponseEntity.badRequest().body("Username already exists");
             }
 
-            // Determine the user's age group
-            String ageGroup = user.getAge() < 18 ? "under18" : "18plus";
+            // Create a new User object
+            User newUser = new User();
+            newUser.setUsername(signupRequest.getUsername());
+            newUser.setEmail(signupRequest.getEmail());
+            newUser.setAge(signupRequest.getAge());
+            newUser.setPassword(passwordEncoder.encode(signupRequest.getPassword())); // Encrypt the password
 
-            // Fetch events matching the user's age group
-            List<Event> events = eventService.getEventsByAgeGroup(ageGroup);
+            // Save the new user to the database
+            userRepository.save(newUser);
 
-            return ResponseEntity.ok(events);
+            return ResponseEntity.ok("User registered successfully");
+
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error fetching user events: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Signup failed: " + e.getMessage());
+        }
+    }
+
+    // Inner class for signup request
+    public static class SignupRequest {
+        private String username;
+        private String password;
+        private String email;
+        private int age;
+
+        // Getters and Setters
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
         }
     }
 
@@ -108,12 +153,15 @@ public class UserController {
 
     // Inner class for login response
     public static class LoginResponse {
+        private Long userId;
         private boolean isAdmin;
         private String ageGroup;
         private String message;
         private List<Event> events;
 
-        public LoginResponse(boolean isAdmin, String ageGroup, String message, List<Event> events) {
+        // Constructor
+        public LoginResponse(Long userId, boolean isAdmin, String ageGroup, String message, List<Event> events) {
+            this.userId = userId;
             this.isAdmin = isAdmin;
             this.ageGroup = ageGroup;
             this.message = message;
@@ -121,6 +169,14 @@ public class UserController {
         }
 
         // Getters and Setters
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
         public boolean isAdmin() {
             return isAdmin;
         }
@@ -154,3 +210,4 @@ public class UserController {
         }
     }
 }
+
