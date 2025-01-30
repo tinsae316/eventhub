@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upcoming Events</title>
-    <link rel="stylesheet" href="events.css">
     <style>
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         .title { text-align: center; font-size: 2.5rem; margin-bottom: 20px; }
@@ -87,10 +86,10 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">${event.name}</h2>
-                        <p class="card-description">${event.description}</p>
                     </div>
                     <div class="card-content">
-                        <img src="${event.photoUrl}" alt="${event.name}" class="event-image">
+                        <img src="http://localhost:8080/api/events/uploads/images/${event.photoUrl}" alt="${event.name}" class="event-image">
+                        <p class="card-description">${event.description}</p>
                         <p><strong>Age Group:</strong> ${event.ageGroup}</p>
                         <p><strong>Capacity:</strong> ${event.capacity}</p>
                         <p><strong>Registered Users:</strong> ${event.registeredUsers}</p>
